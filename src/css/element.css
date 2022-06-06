@@ -1,0 +1,15 @@
+/* 
+默认情况下 webpack无法解析css模块  只能处理js模块（amd,cmd,cjs,es6module）
+loader就是告诉webpack如何解析除了js的模块
+ */
+.title{
+  color: red;
+  font-size: 16px;
+  user-select: none;
+}
+.bg-img{
+  background-image: url('../img/nhlt.jpg');
+  width: 200px;
+  height:200px;
+  background-size: contain;
+}

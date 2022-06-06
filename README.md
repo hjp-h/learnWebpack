@@ -1,2 +1,0 @@
-# learnWebpack
-webpack learning
