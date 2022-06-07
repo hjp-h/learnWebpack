@@ -3,6 +3,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const HtmlWebpackPugin = require('html-webpack-plugin')
 const { DefinePlugin } = require('webpack')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
+const {VueLoaderPlugin } = require('vue-loader/dist/index')
 // 导出配置 webpack 是在node的环境下运行的 需要用commonJS的方式
 module.exports = {
   // 相对路径
@@ -14,6 +15,45 @@ module.exports = {
     path: path.resolve(__dirname, './build'),
     filename: 'js/bundle.js'
     // assetModuleFilename : './img'  配置打包的静态资源存放路径
+  },
+  // 监听模块变化 重新编译
+  // watch:true,
+  devServer: {
+    // 这个配置项相当于当webpack编译找不到对应的文件时 默认会从contentbase里查找
+    // contentBase: './contentBase',  (webpack4 webpack5改为static)
+    static:'./contentBase',
+    // 是否采用模块热更新 默认不知道哪个模块需要热替换
+    hot: true,
+    // 域名 默认是 localhost 也就是127.0.0.1 是一个回环地址（自己发请求自己相应）
+    // host: 0.0.0.0  (可以被其他地方访问)
+    // 端口号
+    port: 7777,
+    // 打开浏览器
+    open: true,
+    // 是否对静态文件开启GZip压缩
+    compress: true,
+    proxy: {
+      // 例如：我们请求的路径是 /api/data  (实际上是 http://localhost:8080/api/data)
+      '/api': {
+        target: 'http://localhost:8888',
+        // 代理后的地址是  http://localhost:8888/api/data  而真实的是http://localhost:8888/data
+        // 因此需要重写路径 将/api替换为 ''
+        pathRewrite: {
+          '^/api': ''
+        },
+        // 是否需要改变源头 
+        // 有些服务器会校验请求的header信息 如果不是预期的结果（例如当前的：localhost:8888 => localhost:7777） 则服务器是不会相应的（爬虫应用）
+        changeOrigin:true
+      }
+    }
+  },
+  resolve: {
+    // 配置扩展名 省略时 webpack从这里添加按顺序扩展名 知道找到位置
+    extensions: ['.js', '.json', '.mjs', '.jsx', '.vue', '.ts'],
+    // 配置别名
+    alias: {
+      '@':path.resolve(__dirname,'./src')
+    }
   },
   module: {
     rules: [
@@ -88,6 +128,12 @@ module.exports = {
       // }
       
       // webpack5 的写法 包含了file-loader url-loader
+      //type的类型
+      //asset/resource 发送一个单独的文件并导出 URL。之前通过使用 file-loader 实现；
+      //asset/inline 导出一个资源的 data URI。之前通过使用 url-loader 实现；
+      //asset/source 导出资源的源代码。之前通过使用 raw-loader 实现；
+      //asset 在导出一个 data URI 和发送一个单独的文件之间自动选择。之前通过使用 url-loader，并且配置资源体
+      //积限制实现；
       {
         test: /\.(jpe?g|png|gif|svg)$/,
         type: 'asset',
@@ -136,6 +182,12 @@ module.exports = {
           //   // presets:['@babel/preset-env']
           // }
         }]
+      },
+      {
+        test: /\.vue$/,
+        use: [{
+          loader:'vue-loader'
+        }]
       }
     ]
   },
@@ -151,7 +203,10 @@ module.exports = {
     }),
     // 定义全局的变量
     new DefinePlugin({
-      BASE_URL:'"./"'
+      BASE_URL: '"./"',
+      // 是否支持vue2 options api  需要配置 不然控制台会有警告
+      __VUE_OPTIONS_API__: true,
+      __VUE_PROD_DEVTOOLS__:false
     }),
     // 复制public下的文件 排除掉html
     new CopyWebpackPlugin({
@@ -166,6 +221,8 @@ module.exports = {
           ]
         }
       }]
-    })
+    }),
+    // 打包vue文件所需要的plugin
+    new VueLoaderPlugin()
   ]
 }
